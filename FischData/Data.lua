@@ -8,7 +8,6 @@ return {
         "Megalodon Default", 
         "Megalodon Ancient",
         "Megalodon Phantom",
-        "LEGO - Studolodon",
         "The Kraken Pool", 
         "Ancient Kraken Pool",
         "Whales Pool",
