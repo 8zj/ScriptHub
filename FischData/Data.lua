@@ -1,0 +1,4 @@
+eventzones = {
+        "LEGO",
+        "LEGO - Studolodon"
+}
