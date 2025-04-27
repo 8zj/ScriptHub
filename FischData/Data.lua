@@ -1,4 +1,4 @@
-return eventzones = {
+return {
     "LEGO",
     "LEGO - Studolodon"
 }
