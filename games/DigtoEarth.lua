@@ -12,10 +12,12 @@ local SettingsMain = {
     SelectedEgg = "Egg1",
     AutoDig = false,
     AutoCollectTreasure = false,
+    Petname = "Noting",
     AutoGoldPets = false,
     AutoDiamondPets = false,
     AutoGoldChance = 100,
     AutoDiamondChance = 100,
+    
     GiveMoneyAmount = 1000,
     GiveGemsAmount = 1000,
     GiveMoney = false,
@@ -65,7 +67,7 @@ HatchGroup:AddToggle("AutoHatch", {
 })
 
 HatchGroup:AddDropdown("WorldDropdown", {
-    Values = { "World1", "World2", "World3", "World4", "World5", "World6", "World7", "World8" },
+    Values = { "World1", "World2", "World3", "World4", "World5", "World6", "World7", "World8","World9","World10" },
     Default = "World1",
     Text = "Select World",
     Callback = function(world)
@@ -77,7 +79,7 @@ HatchGroup:AddDropdown("EggDropdown", {
     Values = {
         "Egg1", "Egg2", "Egg3", "Egg4", "Egg5",
         "Egg6", "Egg7", "Egg8", "Egg9", "Egg10",
-        "Egg11", "Egg12", "Egg13"
+        "Egg11", "Egg12", "Egg13","Egg14","Egg15"
     },
     Default = "Egg1",
     Text = "Select Egg",
@@ -102,6 +104,21 @@ MainGroup:AddToggle("AutoTreasure", {
         SettingsMain.AutoCollectTreasure = state
     end,
 })
+
+
+GoldAndDiamond:AddInput("MyTextbox", {
+    Default = "Pet Name",
+    Numeric = false,
+    Finished = false,
+    ClearTextOnFocus = true,
+    Text = "Will Auto Make gold/diamond",
+    Tooltip = "Must be the pet name.",
+    Placeholder = "",
+    Callback = function(Value)
+        SettingsMain.Petname = Value
+    end,
+})
+
 
 GoldAndDiamond:AddToggle("AutoGold", {
     Text = "Auto Gold Pets (5 at a time)",
@@ -272,7 +289,7 @@ end)
 task.spawn(function()
     while task.wait() do
         if SettingsMain.AutoGoldPets then
-            ReplicatedStorage.PetRemotes.GoldPetCraftEvent:FireServer("Triple Dominus", SettingsMain.AutoGoldChance)
+            ReplicatedStorage.PetRemotes.GoldPetCraftEvent:FireServer(SettingsMain.Petname, SettingsMain.AutoGoldChance)
             task.wait()
         end
     end
@@ -281,7 +298,7 @@ end)
 task.spawn(function()
     while task.wait() do
         if SettingsMain.AutoDiamondPets then
-            ReplicatedStorage.PetRemotes.DiamondPetCraftEvent:FireServer("Triple Dominus", SettingsMain.AutoDiamondChance)
+            ReplicatedStorage.PetRemotes.DiamondPetCraftEvent:FireServer(SettingsMain.Petname, SettingsMain.AutoDiamondChance)
             task.wait()
         end
     end
