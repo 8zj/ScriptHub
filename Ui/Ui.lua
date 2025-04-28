@@ -4734,8 +4734,8 @@ function library:CreateSettingsTab(menu)
                 break
             end
         end
-        setByPreset = false
-    end}):Select('Default');
+        setByPreset = true
+    end}):Select('v.theme');
 
     return settingsTab;
 end
