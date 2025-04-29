@@ -19,5 +19,35 @@ return {
     EventZones = {
         "LEGO",
         "LEGO - Studolodon"
+    },
+    RodsNames = {
+    "Ethereal Prism Rod",
+    "Rod of the Zenith",
+    "Challenger's Rod",
+    "Leviathan's Fang Rod",
+    "Volcanic Rod",
+    "Heaven's Rod",
+    "Crystalized Rod",
+    "Ice Warpers Rod",
+    "Summit Rod",
+    "Arctic Rod",
+    "Avalanche Rod",
+    "Training Rod",
+    "Plastic Rod",
+    "Carbon Rod",
+    "Fast Rod",
+    "Lucky Rod",
+    "Steady Rod",
+    "Nocturnal Rod",
+    "Fortune Rod",
+    "Rapid Rod",
+    "Magnet Rod",
+    "Reinforced Rod",
+    "Scurvy Rod",
+    "Aurora Rod",
+    "King’s Rod",
+    "Trident Rod",
+    "Destiny Rod",
+    "Rod of The Depths"
     }
 }
