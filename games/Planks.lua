@@ -120,7 +120,7 @@ end
     end
 end
 
-local Files = listfiles(string.format("%s/%s", "UniversalSilentAim", tostring(game.PlaceId)))
+local Files = listfiles(string.format("%s/%s", "FuckOff", tostring(game.PlaceId)))
 
 
 local function GetFiles()
