@@ -38,15 +38,14 @@ local Window = Library:CreateWindow({
 
 
 local MainSettings = {
-
 	--Auto Upgrade Stuff Shit ( Not to good lol )
     AutoUpgrade = false,
-    UpgradeName = "CoinMulti",
+    UpgradeName = nil,
 
 
 	--Gem Upgrade 
 	AutoUpgradeGem = false,
-	UpgradeNameGem = "GemMulti",
+	UpgradeNameGem = nil,
 
 	-- Evolve Settings.
 	AutoEvale = false,
@@ -78,29 +77,29 @@ local AutoFarmRunes = Tabs.ExploitsTab:AddRightGroupbox("Auto Open Runes")
 
 GemUpgrade:AddDropdown("UpgradeName", {
     Text = "Pick Ur Upgrade",
-    Values = {"GemMulti","CoinMulti","MoreGems","PetEquip","CoinRate","PetClone"},
+    Values = {"GemMulti","CoinMulti","MoreGems","PetEquip","CoinSpeed","PetClone"},
     Default = nil,
     AllowNull = true,
     Callback = function(Value)
         MainSettings.UpgradeName = Value
+        print("Selected:", Value)
     end,
 })
 
+
 GemUpgrade:AddToggle("MyToggle", {
     Text = "Auto Buy Upgrade",
-    Tooltip = "Will auto buy upgrades",
-    DisabledTooltip = "",
+    Tooltip = "Will auto buy selected GemUpgrade",
     Default = false,
-    Visible = true,
     Callback = function(Value)
-        MainSettings.AutoUpgradeGem = Value
-        if MainSettings.AutoUpgradeGem then
+        MainSettings.AutoUpgrade = Value
+        if MainSettings.AutoUpgrade then
             spawn(function()
-                while MainSettings.AutoUpgradeGem do
+                while MainSettings.AutoUpgrade do
                     task.wait()
-					local ohString1 = "GemUpgrade"
-					local ohString2 = MainSettings.UpgradeNameGem
-					game:GetService("ReplicatedStorage").RE:FireServer(ohString1, ohString2)
+                    if MainSettings.UpgradeName then
+                        game:GetService("ReplicatedStorage").RE:FireServer("GemUpgrade", MainSettings.UpgradeName)
+                    end
                 end
             end)
         end
@@ -229,10 +228,9 @@ Autofarming:AddToggle("AutoFarmToggle", {
     end,
 })
 
-
 LeftGroupBox:AddDropdown("UpgradeName", {
     Text = "Pick Ur Upgrade",
-    Values = {"CoinMulti","EggSpeed","EggLuck","PetEquip","PetStorage","EggClone"},
+    Values = {"CoinMulti", "EggSpeed", "EggLuck", "PetEquip", "PetStorage", "EggClone"},
     Default = nil,
     AllowNull = true,
     Callback = function(Value)
@@ -240,21 +238,21 @@ LeftGroupBox:AddDropdown("UpgradeName", {
     end,
 })
 
+
 LeftGroupBox:AddToggle("MyToggle", {
     Text = "Auto Buy Upgrade",
     Tooltip = "Will auto buy upgrades",
-    DisabledTooltip = "",
     Default = false,
-    Visible = true,
     Callback = function(Value)
         MainSettings.AutoUpgrade = Value
         if MainSettings.AutoUpgrade then
             spawn(function()
                 while MainSettings.AutoUpgrade do
                     task.wait()
-                    local ohString1 = "CoinUpgrade"
-                    local ohString2 = MainSettings.UpgradeName
-                    game:GetService("ReplicatedStorage").RE:FireServer(ohString1, ohString2)
+                    if MainSettings.UpgradeName then
+                        game:GetService("ReplicatedStorage").RE:FireServer("GemUpgrade", MainSettings.UpgradeName)
+                        print("Upgrading:", MainSettings.UpgradeName)
+                    end
                 end
             end)
         end
