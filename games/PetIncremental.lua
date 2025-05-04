@@ -106,7 +106,6 @@ AutoFarmRunes:AddDropdown("UpgradeName", {
     Values = {"Rune1","Rune2"},
     Default = nil,
     AllowNull = true,
-	Multi = true,
     Callback = function(Value)
         MainSettings.NameOfRunes = Value
     end,
@@ -225,11 +224,9 @@ Autofarming:AddToggle("AutoFarmToggle", {
 })
 
 
-
-
 LeftGroupBox:AddDropdown("UpgradeName", {
     Text = "Pick Ur Upgrade",
-    Values = {"CoinMulti","EggSpeed","EggLuck","PetEquip","PetSotreage","MultiOpen"},
+    Values = {"CoinMulti","EggSpeed","EggLuck","PetEquip","PetStorage","EggClone"},
     Default = nil,
     AllowNull = true,
     Callback = function(Value)
