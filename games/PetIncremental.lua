@@ -1,3 +1,10 @@
+--[[
+										This script was made for funs.
+	noting to much will plan to update more.				Will Mostlikey be patched
+											Made By Pick
+
+]]
+
 local repo = "https://raw.githubusercontent.com/8zj/Uis/refs/heads/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -51,7 +58,6 @@ local MainSettings = {
     AutoEgg = false,
 	autofarmEnabled = false,
 	AutoFarmPlasma = false,
-
 
 	--Runes Farming
 	AutoFarmRunes = false,
