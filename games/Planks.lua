@@ -99,18 +99,13 @@ local ExpectedArguments = {
 }
 
 function CalculateChance(Percentage)
-    -- // Floor the percentage
     Percentage = math.floor(Percentage)
-
-    -- // Get the chance
     local chance = math.floor(Random.new().NextNumber(Random.new(), 0, 1) * 100) / 100
-
-    -- // Return
     return chance <= Percentage / 100
 end
 
 
---[[file handling]] do 
+do 
     if not isfolder(MainFileName) then 
         makefolder(MainFileName);
     end
@@ -239,7 +234,7 @@ local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
 local Window = Library:CreateWindow({
     Title = '[ Pick Hub ]',
     Center = true, 
-    AutoShow = true,
+    AutoShow = false,
     TabPadding = 8,
     MenuFadeTime = 0,
     Size = UDim2.new(0, 445, 0, 345)
@@ -427,26 +422,7 @@ oldIndex = hookmetamethod(game, "__index", newcclosure(function(self, Index)
 end))
 
 
-local FrameTimer = tick()
-local FrameCounter = 0;
-local FPS = 60;
-
-local WatermarkConnection = game:GetService('RunService').RenderStepped:Connect(function()
-    FrameCounter += 1;
-
-    if (tick() - FrameTimer) >= 1 then
-        FPS = FrameCounter;
-        FrameTimer = tick();
-        FrameCounter = 0;
-    end;
-    Library:SetWatermark(('[ Pick Hub ] | %s fps | %s ms'):format(
-        math.floor(FPS),
-        math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
-    ));
-end);
-
 Library:OnUnload(function()
-    WatermarkConnection:Disconnect()
     Library.Unloaded = true
     Enabled = false
     TeamCheck = false
@@ -459,7 +435,7 @@ end)
 
 local MenuGroup = UISettings:AddLeftGroupbox('Menu')
 MenuGroup:AddButton('Unload', function() Library:Unload() end)
-MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'Delete', NoUI = true, Text = 'Menu keybind' })
 Library.ToggleKeybind = Options.MenuKeybind
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
