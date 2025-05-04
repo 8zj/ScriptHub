@@ -106,6 +106,7 @@ AutoFarmRunes:AddDropdown("UpgradeName", {
     Values = {"Rune1","Rune2"},
     Default = nil,
     AllowNull = true,
+	Multi = true,
     Callback = function(Value)
         MainSettings.NameOfRunes = Value
     end,
