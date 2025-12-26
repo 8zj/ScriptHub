@@ -1,4 +1,4 @@
--- // --- PICK | AUTO STRATEGY FULL INTEGRATED --- //
+-- // --- PICK | AUTO STRATEGY FULL INTEGRATED V2 --- //
 
 -- // UI Configuration
 local ACCENT_COLOR = Color3.fromRGB(150, 200, 60)
@@ -48,7 +48,7 @@ local function AddLog(text, color)
     LogContainer.CanvasPosition = Vector2.new(0, LogContainer.CanvasSize.Y.Offset)
 end
 
--- // --- FULL SCRIPT LOGIC --- //
+-- // --- MAIN SCRIPT --- //
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
@@ -66,9 +66,6 @@ end
 local game_state = identify_game_state()
 AddLog("Detected State: " .. game_state, Color3.new(1, 1, 1))
 
-local send_request = request or http_request or httprequest or (GetDevice and GetDevice().request)
-if not send_request then AddLog("Failure: No HTTP Function", Color3.new(1, 0, 0)) end
-
 local replicated_storage = game:GetService("ReplicatedStorage")
 local remote_func = replicated_storage:WaitForChild("RemoteFunction")
 local remote_event = replicated_storage:WaitForChild("RemoteEvent")
@@ -76,26 +73,9 @@ local players_service = game:GetService("Players")
 local local_player = players_service.LocalPlayer or players_service.PlayerAdded:Wait()
 local player_gui = local_player:WaitForChild("PlayerGui")
 
-local back_to_lobby_running, auto_snowballs_running, auto_skip_running = false, false, false
+local TDS = { placed_towers = {}, active_strat = true }
 
-local ItemNames = {
-    ["17447507910"] = "Timescale Ticket(s)", ["17438486690"] = "Range Flag(s)",
-    ["17438486138"] = "Damage Flag(s)", ["17438487774"] = "Cooldown Flag(s)",
-    ["17429537022"] = "Blizzard(s)", ["17448596749"] = "Napalm Strike(s)",
-    ["18493073533"] = "Spin Ticket(s)", ["17429548305"] = "Supply Drop(s)",
-    ["18443277308"] = "Low Grade Consumable Crate(s)", ["136180382135048"] = "Santa Radio(s)",
-    ["18443277106"] = "Mid Grade Consumable Crate(s)", ["132155797622156"] = "Christmas Tree(s)",
-    ["124065875200929"] = "Fruit Cake(s)", ["17429541513"] = "Barricade(s)",
-}
-
-local start_coins, current_total_coins, start_gems, current_total_gems = 0, 0, 0, 0
-if game_state == "GAME" then
-    pcall(function()
-        repeat task.wait(1) until local_player:FindFirstChild("Coins")
-        start_coins = local_player.Coins.Value; current_total_coins = start_coins
-        start_gems = local_player.Gems.Value; current_total_gems = start_gems
-    end)
-end
+-- // --- HELPER FUNCTIONS --- //
 
 local function check_res_ok(data)
     if data == true then return true end
@@ -105,97 +85,39 @@ local function check_res_ok(data)
     return type(data) == "userdata"
 end
 
-local function get_all_rewards()
-    local results = { Coins = 0, Gems = 0, XP = 0, Time = "00:00", Status = "UNKNOWN", Others = {} }
-    local ui_root = player_gui:FindFirstChild("ReactGameNewRewards")
-    local main_frame = ui_root and ui_root:FindFirstChild("Frame")
-    local rewards_screen = main_frame and main_frame:FindFirstChild("gameOver") and main_frame.gameOver:FindFirstChild("RewardsScreen")
-    
-    if rewards_screen then
-        local stats_list = rewards_screen:FindFirstChild("gameStats") and rewards_screen.gameStats:FindFirstChild("stats")
-        if stats_list then
-            for _, frame in ipairs(stats_list:GetChildren()) do
-                local l1, l2 = frame:FindFirstChild("textLabel"), frame:FindFirstChild("textLabel2")
-                if l1 and l2 and l1.Text:find("Time Completed:") then results.Time = l2.Text break end
-            end
-        end
-        local top_banner = rewards_screen:FindFirstChild("RewardBanner")
-        if top_banner and top_banner:FindFirstChild("textLabel") then
-            local txt = top_banner.textLabel.Text:upper()
-            results.Status = txt:find("TRIUMPH") and "WIN" or (txt:find("LOST") and "LOSS" or "UNKNOWN")
-        end
-        local section = rewards_screen:FindFirstChild("RewardsSection")
-        if section then
-            for _, item in ipairs(section:GetChildren()) do
-                if tonumber(item.Name) then
-                    local icon_id = "0"
-                    local img = item:FindFirstChildWhichIsA("ImageLabel", true)
-                    if img then icon_id = img.Image:match("%d+") or "0" end
-                    for _, child in ipairs(item:GetDescendants()) do
-                        if child:IsA("TextLabel") then
-                            local text, amt = child.Text, tonumber(child.Text:match("(%d+)")) or 0
-                            if text:find("Coins") then results.Coins = amt
-                            elseif text:find("Gems") then results.Gems = amt
-                            elseif text:find("XP") then results.XP = amt
-                            elseif text:lower():find("x%d+") then 
-                                table.insert(results.Others, {Amount = text:match("x%d+"), Name = ItemNames[icon_id] or "Item " .. icon_id})
-                            end
-                        end
-                    end
-                end
-            end
+local function get_current_wave()
+    local success, label = pcall(function() return player_gui:WaitForChild("ReactGameTopGameDisplay").Frame.wave.container.value end)
+    if not success then return 0 end
+    local wave_num = label.Text:match("^(%d+)")
+    return tonumber(wave_num) or 0
+end
+
+-- // --- ATTACHING ALL API METHODS --- //
+
+function TDS:Loadout(...)
+    if game_state ~= "LOBBY" then return false end
+    local towers = {...}
+    AddLog("Equipping Loadout...", ACCENT_COLOR)
+    for _, tower_name in ipairs(towers) do
+        if tower_name and tower_name ~= "" then
+            pcall(function() remote_func:InvokeServer("Inventory", "Equip", "tower", tower_name) end)
+            task.wait(0.3)
         end
     end
-    return results
 end
 
-local function send_to_lobby()
-    AddLog("Teleporting to Lobby...", Color3.fromRGB(255, 100, 100))
-    task.wait(1)
-    pcall(function() game.ReplicatedStorage.Network.Teleport["RE:backToLobby"]:FireServer() end)
+function TDS:Mode(difficulty)
+    if game_state ~= "LOBBY" then return false end
+    AddLog("Selecting Mode: " .. difficulty, ACCENT_COLOR)
+    local ok, res = pcall(function()
+        if difficulty == "Hardcore" then
+            return remote_func:InvokeServer("Multiplayer", "v2:start", {mode = "hardcore", count = 1})
+        else
+            return remote_func:InvokeServer("Multiplayer", "v2:start", {difficulty = difficulty, mode = "survival", count = 1})
+        end
+    end)
+    return ok and check_res_ok(res)
 end
-
-local function handle_post_match()
-    local ui_root
-    repeat task.wait(1)
-        local root = player_gui:FindFirstChild("ReactGameNewRewards")
-        ui_root = root and root:FindFirstChild("Frame") and root.Frame:FindFirstChild("gameOver")
-    until ui_root
-    
-    AddLog("Match Finished. Processing Rewards...", ACCENT_COLOR)
-    local match = get_all_rewards()
-    current_total_coins += match.Coins; current_total_gems += match.Gems
-
-    if _G.SendWebhook then
-        local bonus_string = ""
-        for _, res in ipairs(match.Others) do bonus_string = bonus_string .. "🎁 **" .. res.Amount .. " " .. res.Name .. "**\n" end
-        if bonus_string == "" then bonus_string = "_None_" end
-
-        local post_data = {
-            username = "TDS AutoStrat",
-            embeds = {{
-                title = (match.Status == "WIN" and "🏆 TRIUMPH" or "💀 DEFEAT"),
-                color = (match.Status == "WIN" and 0x2ecc71 or 0xe74c3c),
-                description = "### Overview\n> Status: `" .. match.Status .. "`\n> Time: `" .. match.Time .. "`",
-                fields = {
-                    { name = "✨ Rewards", value = "```ansi\nCoins: " .. match.Coins .. "\nGems: " .. match.Gems .. "\nXP: " .. match.XP .. "```", inline = false },
-                    { name = "🎁 Bonus Items", value = bonus_string, inline = true },
-                    { name = "📊 Totals", value = "```py\nCoins: " .. current_total_coins .. "\nGems: " .. current_total_gems .. "```", inline = true }
-                },
-                footer = { text = "Logged for " .. local_player.Name },
-                timestamp = DateTime.now():ToIsoDate()
-            }}
-        }
-        pcall(function()
-            send_request({ Url = _G.Webhook, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = game:GetService("HttpService"):JSONEncode(post_data) })
-        end)
-    end
-    send_to_lobby()
-end
-
--- // Tower Control Core
-local TDS = { placed_towers = {}, active_strat = true }
-local upgrade_history = {}
 
 function TDS:Place(t_name, px, py, pz)
     if game_state ~= "GAME" then return false end
@@ -203,8 +125,9 @@ function TDS:Place(t_name, px, py, pz)
     local existing = {}
     for _, child in ipairs(workspace.Towers:GetChildren()) do existing[child] = true end
     
+    local ok, res
     repeat
-        local ok, res = pcall(function()
+        ok, res = pcall(function()
             return remote_func:InvokeServer("Troops", "Pl\208\176ce", {Rotation = CFrame.new(), Position = Vector3.new(px, py, pz)}, t_name)
         end)
         task.wait(0.3)
@@ -218,7 +141,7 @@ function TDS:Place(t_name, px, py, pz)
         task.wait(0.05)
     until new_t
     table.insert(self.placed_towers, new_t)
-    AddLog("Success: #" .. #self.placed_towers .. " " .. t_name, Color3.new(1,1,1))
+    AddLog("Placed Tower #" .. #self.placed_towers, Color3.new(1,1,1))
     return #self.placed_towers
 end
 
@@ -230,7 +153,6 @@ function TDS:Upgrade(idx, p_id)
             local ok, res = pcall(function() return remote_func:InvokeServer("Troops", "Upgrade", "Set", {Troop = t, Path = p_id or 1}) end)
             task.wait(0.2)
         until ok and check_res_ok(res)
-        upgrade_history[idx] = (upgrade_history[idx] or 0) + 1
     end
 end
 
@@ -238,11 +160,16 @@ function TDS:Sell(idx)
     local t = self.placed_towers[idx]
     if t then
         AddLog("Selling #" .. idx, Color3.fromRGB(255, 80, 80))
-        repeat
-            local ok, res = pcall(function() return remote_func:InvokeServer("Troops", "Sell", { Troop = t }) end)
-            task.wait(0.2)
-        until ok and check_res_ok(res)
+        pcall(function() remote_func:InvokeServer("Troops", "Sell", { Troop = t }) end)
         table.remove(self.placed_towers, idx)
+    end
+end
+
+function TDS:SetTarget(idx, target_type)
+    local t = self.placed_towers[idx]
+    if t then
+        AddLog("Targeting #" .. idx .. " -> " .. target_type, Color3.fromRGB(200, 200, 200))
+        remote_func:InvokeServer("Troops", "Target", "Set", {Troop = t, Target = target_type})
     end
 end
 
@@ -275,8 +202,6 @@ end
 
 function TDS:TimeScale(val)
     AddLog("Setting Speed: x" .. val, ACCENT_COLOR)
-    local speed_list = {0, 0.5, 1, 1.5, 2}
-    -- Cycle logic as requested...
     task.spawn(function()
         for i=1, 4 do 
             remote_func:InvokeServer("TicketsManager", "CycleTimeScale") 
@@ -285,22 +210,32 @@ function TDS:TimeScale(val)
     end)
 end
 
--- // --- MAIN LOOPS --- //
+function TDS:AutoChain(...)
+    local tower_indices = {...}
+    if #tower_indices == 0 then return end
+    AddLog("AutoChain Enabled", ACCENT_COLOR)
+    local running = true
+    task.spawn(function()
+        local i = 1
+        while running do
+            local tower = self.placed_towers[tower_indices[i]]
+            if tower then pcall(function() remote_func:InvokeServer("Troops", "Abilities", "Activate", {Troop = tower, Name = "Call to Arms"}) end) end
+            task.wait(local_player.TimescaleTickets.Value >= 1 and 5.5 or 10.5)
+            i = (i % #tower_indices) + 1
+        end
+    end)
+    return function() running = false end
+end
 
-task.spawn(function() -- Auto Skip Loop
+-- // --- BACKGROUND LOOPS --- //
+
+task.spawn(function() -- Auto Skip
     while true do
         if _G.AutoSkip then
             local skip_v = player_gui:FindFirstChild("ReactOverridesVote", true)
             if skip_v then TDS:VoteSkip() task.wait(5) end
         end
         task.wait(1)
-    end
-end)
-
-task.spawn(function() -- Back to Lobby/Post Match
-    while true do
-        pcall(handle_post_match)
-        task.wait(5)
     end
 end)
 
